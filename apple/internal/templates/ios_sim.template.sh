@@ -46,16 +46,17 @@ function MissingRuntimeError() {
       "$(xcrun simctl list runtimes)"
 }
 
+function get_uid() {
+  echo $(xcrun simctl list devices | grep -w -m1 %sim_device% | awk 'match($0, /\(([-0-9A-F]+)\)/) { print substr( $0, RSTART + 1, RLENGTH - 2 )}')
+}
+
+# Note: the sim_device might contain spaces, but they are already provided in
+# quoted form in the template variables, so we should not quote them again here.
 trap "MissingRuntimeError" ERR
-sim_device="%sim_device%"
-sim_os_version="%sim_os_version%"
-
-if [[ -z "$sim_device" ]] || [[ -z "$sim_os_version" ]]; then
-  echo "No simulator device or version configured. Please use both --ios_simulator_version and --ios_simulator_device to specify them."
-  exit 1
-fi
-
-TEST_DEVICE_ID=$(xcrun simctl create TestDevice "$sim_device" com.apple.CoreSimulator.SimRuntime.iOS-${sim_os_version//./-})
+sdk_version="%sdk_version%"
+# TEST_DEVICE_ID=$(xcrun simctl create TestDevice %sim_device% com.apple.CoreSimulator.SimRuntime.iOS-${sdk_version//./-})
+TEST_DEVICE_ID=$(get_uid)
+# xcrun simctl shutdown "$TEST_DEVICE_ID" 2> /dev/null || true
 trap - ERR
 
 function KillAllDevices() {
@@ -111,7 +112,7 @@ function wait_for_sim_to_boot() {
 function CleanupSimulator() {
   # Device may not have started up, so no guarantee shutdown is going to be good.
   xcrun simctl shutdown "$1" 2> /dev/null || true
-  xcrun simctl delete "$1"
+  # xcrun simctl delete "$1"
 }
 
 readonly STD_REDIRECT_DYLIB="$PWD/%std_redirect_dylib_path%"
@@ -120,7 +121,7 @@ readonly TEMP_DIR=$(mktemp -d "${TMPDIR:-/tmp}/bazel_temp.XXXXXX")
 
 trap 'rm -rf "${TEMP_DIR}"; CleanupSimulator ${TEST_DEVICE_ID}' ERR EXIT
 
-KillAllDevices
+# KillAllDevices
 
 # Get the developer path, like: /Applications/Xcode.app/Contents/Developer
 readonly DEVELOPER_PATH=$(xcode-select -p)
@@ -169,11 +170,13 @@ else
   readonly APP_DIR="${APP_PARENT_DIR}/Payload/%app_name%.app"
 fi
 
-xcrun simctl install "$TEST_DEVICE_ID" "${APP_DIR}"
-
 # Get the bundle ID of the app.
 readonly BUNDLE_INFO_PLIST="${APP_DIR}/Info.plist"
 readonly BUNDLE_ID=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "${BUNDLE_INFO_PLIST}")
+
+xcrun simctl terminate "$TEST_DEVICE_ID" "$BUNDLE_ID" 2> /dev/null || true
+sleep 5
+xcrun simctl install "$TEST_DEVICE_ID" "${APP_DIR}"
 
 USER_NAME=${USER:-"$(logname)"}
 readonly SYSTEM_LOG="/Users/${USER_NAME}/Library/Logs/CoreSimulator/${TEST_DEVICE_ID}/system.log"
