@@ -47,7 +47,7 @@ function MissingRuntimeError() {
 }
 
 function get_uid() {
-  echo $(xcrun simctl list devices | grep -w -m1 %sim_device% | awk 'match($0, /\(([-0-9A-F]+)\)/) { print substr( $0, RSTART + 1, RLENGTH - 2 )}')
+  echo $(xcrun simctl list devices | grep -w -m1 "%sim_device%" | awk 'match($0, /\(([-0-9A-F]+)\)/) { print substr( $0, RSTART + 1, RLENGTH - 2 )}')
 }
 
 # Note: the sim_device might contain spaces, but they are already provided in
