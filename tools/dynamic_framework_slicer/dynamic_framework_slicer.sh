@@ -31,6 +31,7 @@ set -euo pipefail
 declare -a BINARIES
 IN=""
 OUT=""
+STRIP_BITCODE=""
 while [[ $# -gt 0 ]]; do
   arg="$1"
   case $arg in
@@ -40,6 +41,10 @@ while [[ $# -gt 0 ]]; do
       ;;
       --out)
       readonly OUT="$2"
+      shift
+      ;;
+      --strip_bitcode)
+      readonly STRIP_BITCODE="$2"
       shift
       ;;
       *)
@@ -84,4 +89,8 @@ else
         lipo_args+=(-extract $slice)
     done
     xcrun lipo "$IN" "${lipo_args[@]}" -output "$OUT"
+fi
+
+if [[ "$STRIP_BITCODE" == "true" ]]; then
+    xcrun bitcode_strip "$OUT" -r -o "$OUT"
 fi

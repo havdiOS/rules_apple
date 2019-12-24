@@ -32,6 +32,7 @@
 set -eu
 
 BINARIES+=()
+STRIP_BITCODE=""
 while [[ $# -gt 0 ]]; do
   arg="$1"
   case $arg in
@@ -49,6 +50,10 @@ while [[ $# -gt 0 ]]; do
       ;;
       --realpath)
       readonly REALPATH="$2"
+      shift
+      ;;
+      --strip_bitcode)
+      readonly STRIP_BITCODE="$2"
       shift
       ;;
       *)
@@ -116,6 +121,12 @@ function strip_dylibs {
     )
 
     local real_output_path=$("$REALPATH" "$2")
+    if [[ "$STRIP_BITCODE" == "true" ]]; then
+      find "$1" \
+        -name *.dylib \
+        -execdir \
+        /usr/bin/xcrun bitcode_strip {} -r -o {} \;
+    fi
     find "$1" \
         -name *.dylib \
         -execdir \

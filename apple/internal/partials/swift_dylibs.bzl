@@ -101,6 +101,11 @@ def _swift_dylib_action(ctx, platform_name, binary_files, output_dir):
         swift_dylibs_path,
     ]
 
+    swift_dylibs_bitcode_stripping_requested = defines.bool_value(ctx, "apple.strip_bitcode_swift_dylibs", False)
+    if swift_dylibs_bitcode_stripping_requested:
+        swift_stdlib_tool_args.append("--strip_bitcode")
+        swift_stdlib_tool_args.append("true")
+
     apple_support.run(
         ctx,
         inputs = binary_files,

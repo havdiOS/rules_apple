@@ -46,6 +46,10 @@ load(
     "@bazel_skylib//lib:paths.bzl",
     "paths",
 )
+load(
+    "@build_bazel_rules_apple//apple/internal/utils:defines.bzl",
+    "defines",
+)
 
 def _framework_import_partial_impl(ctx, targets, targets_to_avoid, extra_binaries):
     """Implementation for the framework import file processing partial."""
@@ -98,6 +102,11 @@ def _framework_import_partial_impl(ctx, targets, targets_to_avoid, extra_binarie
             all_binaries = extra_binaries + [main_binary]
             for binary in all_binaries:
                 args.append(binary.path)
+            
+            swift_dylibs_bitcode_stripping_requested = defines.bool_value(ctx, "apple.strip_bitcode_swift_dylibs", False)
+            if swift_dylibs_bitcode_stripping_requested:
+                args.append("--strip_bitcode")
+                args.append("true")
 
             apple_support.run(
                 ctx,
