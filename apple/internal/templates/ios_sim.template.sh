@@ -177,6 +177,8 @@ readonly BUNDLE_ID=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "${B
 
 xcrun simctl terminate "$TEST_DEVICE_ID" "$BUNDLE_ID" 2> /dev/null || true
 sleep 5
+APP_CONTAINER_PATH=$(xcrun simctl get_app_container "$TEST_DEVICE_ID" "$BUNDLE_ID")
+rm -rf "$APP_CONTAINER_PATH"
 xcrun simctl install "$TEST_DEVICE_ID" "${APP_DIR}"
 sleep 5
 
