@@ -119,7 +119,8 @@ readonly STD_REDIRECT_DYLIB="$PWD/%std_redirect_dylib_path%"
 
 readonly TEMP_DIR=$(mktemp -d "${TMPDIR:-/tmp}/bazel_temp.XXXXXX")
 
-trap 'rm -rf "${TEMP_DIR}"; CleanupSimulator ${TEST_DEVICE_ID}' ERR EXIT
+# trap 'rm -rf "${TEMP_DIR}"; CleanupSimulator ${TEST_DEVICE_ID}' ERR EXIT
+trap 'rm -rf "${TEMP_DIR}"' ERR EXIT
 
 # KillAllDevices
 
@@ -177,6 +178,7 @@ readonly BUNDLE_ID=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "${B
 xcrun simctl terminate "$TEST_DEVICE_ID" "$BUNDLE_ID" 2> /dev/null || true
 sleep 5
 xcrun simctl install "$TEST_DEVICE_ID" "${APP_DIR}"
+sleep 5
 
 USER_NAME=${USER:-"$(logname)"}
 readonly SYSTEM_LOG="/Users/${USER_NAME}/Library/Logs/CoreSimulator/${TEST_DEVICE_ID}/system.log"
