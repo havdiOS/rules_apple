@@ -37,7 +37,25 @@ def _bool_value(ctx, define_name, default):
             define_name,
         ))
     return default
+    
+def _string_value(ctx, define_name, default):
+    """Looks up a define on ctx for a string value.
+
+    Args:
+      ctx: A skylark context.
+      define_name: The name of the define to look up.
+      default: The value to return if the define isn't found.
+
+    Returns:
+      String value or the default value if the define wasn't found.
+    """
+    value = ctx.var.get(define_name, None)
+    if value != None:
+        return value
+        
+    return default
 
 defines = struct(
     bool_value = _bool_value,
+    string_value = _string_value,
 )
