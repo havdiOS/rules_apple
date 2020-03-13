@@ -77,6 +77,11 @@ fi
 LAUNCH_OPTIONS_JSON_STR=""
 
 TEST_ENV="%(test_env)s"
+
+if [ ! -z ${LLVM_PROFILE_FILE+x} ]; then
+  TEST_ENV="${TEST_ENV},LLVM_PROFILE_FILE=${LLVM_PROFILE_FILE}"
+fi
+
 if [[ -n "${TEST_ENV}" ]]; then
   # Converts the test env string to json format and addes it into launch
   # options string.
