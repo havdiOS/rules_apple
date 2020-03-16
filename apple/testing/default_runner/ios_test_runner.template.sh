@@ -78,9 +78,11 @@ LAUNCH_OPTIONS_JSON_STR=""
 
 TEST_ENV="%(test_env)s"
 
-if [ ! -z ${LLVM_PROFILE_FILE+x} ]; then
-  TEST_ENV="${TEST_ENV},LLVM_PROFILE_FILE=${LLVM_PROFILE_FILE}"
-fi
+TEST_ENVS=( $(echo $TEST_ENV | tr "," " ") )
+for i in "${TEST_ENVS[@]}"; do
+  ENV_VARS=( $(echo $i | tr "=" " ") )
+  eval "${ENV_VARS[0]}=\"${ENV_VARS[1]}\""
+done
 
 if [[ -n "${TEST_ENV}" ]]; then
   # Converts the test env string to json format and addes it into launch
@@ -115,4 +117,36 @@ cmd=("%(testrunner_binary)s"
   "$@")
 "${cmd[@]}" 2>&1
 status=$?
+
+set -x
+
+if [ ! -z ${LLVM_PROFILE_FILE+x} ]; then
+  OUTPUT_DIR=$(dirname $LLVM_PROFILE_FILE)/$TEST_BUNDLE_NAME
+  rm -rf $OUTPUT_DIR || true
+  mkdir -p $OUTPUT_DIR
+  xcrun llvm-profdata merge -o "${LLVM_PROFILE_FILE}.profdata" "$LLVM_PROFILE_FILE"
+  
+  if [[ "${COVERAGE_HTML_REPORT}" == "True" ]]; then
+    xcrun llvm-cov \
+      show \
+      -format=html \
+      -instr-profile "${LLVM_PROFILE_FILE}.profdata" \
+      "${TEST_BUNDLE_TMP_DIR}/${TEST_BUNDLE_NAME}.xctest/${TEST_BUNDLE_NAME}" \
+      -output-dir="$OUTPUT_DIR/coverage" \
+      -ignore-filename-regex="$IGNORE_FILTER_REGEX" \
+      -name-regex="$FILTER_REGEX"
+      
+    open "$OUTPUT_DIR/coverage/index.html"
+  fi
+  
+  if [[ "${COVERAGE_TEXT_REPORT}" == "True" ]]; then
+    xcrun llvm-cov \
+      report \
+      -instr-profile "${LLVM_PROFILE_FILE}.profdata" \
+      "${TEST_BUNDLE_TMP_DIR}/${TEST_BUNDLE_NAME}.xctest/${TEST_BUNDLE_NAME}" \
+      -ignore-filename-regex="$IGNORE_FILTER_REGEX" \
+      -name-regex="$FILTER_REGEX" > "${OUTPUT_DIR}/coverage_report.txt" 
+  fi
+fi
+
 exit ${status}
