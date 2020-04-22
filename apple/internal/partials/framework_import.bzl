@@ -103,8 +103,8 @@ def _framework_import_partial_impl(ctx, targets, targets_to_avoid, extra_binarie
             for binary in all_binaries:
                 args.append(binary.path)
             
-            swift_dylibs_bitcode_stripping_requested = defines.bool_value(ctx, "apple.strip_bitcode_swift_dylibs", False)
-            if swift_dylibs_bitcode_stripping_requested:
+            strip_bitcode_dynamic_frameworks_requested = defines.bool_value(ctx, "apple.strip_bitcode_dynamic_frameworks", False)
+            if strip_bitcode_dynamic_frameworks_requested:
                 args.append("--strip_bitcode")
                 args.append("true")
 
