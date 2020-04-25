@@ -120,7 +120,7 @@ status=$?
 
 set -x
 
-if [ ! -z ${LLVM_PROFILE_FILE+x} ]; then
+if [ ! -z ${ENABLE_CODE_COVERAGE+x} ] && [[ "${ENABLE_CODE_COVERAGE}" == "true" ]]; then
   OUTPUT_DIR=$(dirname $LLVM_PROFILE_FILE)/$TEST_BUNDLE_NAME
   rm -rf $OUTPUT_DIR || true
   mkdir -p $OUTPUT_DIR
