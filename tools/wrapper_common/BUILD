@@ -31,6 +31,16 @@ py_library(
     deps = ["//tools/wrapper_common:execute"],
 )
 
+py_library(
+    name = "bitcode_strip",
+    srcs = ["bitcode_strip.py"],
+    srcs_version = "PY2AND3",
+    visibility = [
+        "//tools:__subpackages__",
+    ],
+    deps = ["//tools/wrapper_common:execute"],
+)
+
 # Consumed by bazel tests.
 filegroup(
     name = "for_bazel_tests",

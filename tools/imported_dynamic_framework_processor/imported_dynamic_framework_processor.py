@@ -23,6 +23,7 @@ import time
 from build_bazel_rules_apple.tools.codesigningtool import codesigningtool
 from build_bazel_rules_apple.tools.wrapper_common import execute
 from build_bazel_rules_apple.tools.wrapper_common import lipo
+from build_bazel_rules_apple.tools.wrapper_common import bitcode_strip
 
 
 def _sign_framework(args):
@@ -76,7 +77,7 @@ def _copy_framework_file(framework_file, executable, output_path):
   return 0
 
 
-def _strip_framework_binary(framework_binary, output_path, slices_needed):
+def _strip_framework_binary(framework_binary, output_path, slices_needed, strip_bitcode):
   """Strips the binary to only the slices needed, saves output to given path."""
   if not slices_needed:
     print("Internal Error: Did not specify any slices needed for binary at "
@@ -90,6 +91,9 @@ def _strip_framework_binary(framework_binary, output_path, slices_needed):
   temp_framework_path = os.path.join(output_path, path_from_framework)
 
   lipo.invoke_lipo(framework_binary, slices_needed, temp_framework_path)
+
+  if strip_bitcode == "true":
+    bitcode_strip.invoke_bitcode_strip(temp_framework_path, temp_framework_path)
 
 
 def main():
@@ -113,6 +117,10 @@ def main():
   parser.add_argument(
       "--output_zip", type=str, required=True, help="path to save the zip file "
       "containing a codesigned, lipoed version of the imported framework"
+  )
+  parser.add_argument(
+      "--strip_bitcode", type=str, action="append", help="Strip bitcode "
+      "from target framework to reduce size"
   )
   args = parser.parse_args()
 
@@ -146,7 +154,8 @@ def main():
         return 1
       status_code = _strip_framework_binary(framework_binary,
                                             args.temp_path,
-                                            slices_needed)
+                                            slices_needed,
+                                            args.strip_bitcode)
     if status_code:
       return 1
 

@@ -22,6 +22,7 @@ import tempfile
 
 from build_bazel_rules_apple.tools.wrapper_common import execute
 from build_bazel_rules_apple.tools.wrapper_common import lipo
+from build_bazel_rules_apple.tools.wrapper_common import bitcode_strip
 
 
 def _copy_swift_stdlibs(binaries_to_scan, swift_dylibs_path, sdk_platform,
@@ -77,6 +78,14 @@ def _lipo_exec_files(exec_files, target_archs, source_path, destination_path):
           exec_file_source_path, target_archs, exec_file_destination_path
       )
 
+def _strip_bitcode_exec_files(exec_files, source_path, destination_path):
+  """Strips bitcode executable files if needed and copies them to the destination."""
+
+  # Strip bitcode each file as needed, from source to destination.
+  for exec_file in exec_files:
+    exec_file_source_path = os.path.join(source_path, exec_file)
+    exec_file_destination_path = os.path.join(destination_path, exec_file)
+    bitcode_strip.invoke_bitcode_strip(exec_file_source_path, exec_file_destination_path)
 
 def main():
   parser = argparse.ArgumentParser(description="swift stdlib tool")
@@ -97,6 +106,10 @@ def main():
   parser.add_argument(
       "--output_path", type=str, required=True, help="path to save the Swift "
       "support libraries to"
+  )
+  parser.add_argument(
+      "--strip_bitcode", type=str, action="append",
+      help="strip bitcode in stdlib to reduce size"
   )
   args = parser.parse_args()
 
@@ -120,6 +133,10 @@ def main():
 
   # Copy or use lipo to strip the executable Swift stdlibs to their destination.
   _lipo_exec_files(stdlib_files, target_archs, temp_path, args.output_path)
+
+  # Strip bitcode
+  if args.strip_bitcode == "true":
+    _strip_bitcode_exec_files(stdlib_files, args.output_path, args.output_path)
 
   shutil.rmtree(temp_path)
 
