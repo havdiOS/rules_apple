@@ -42,6 +42,16 @@ def _invoke_lipo(binary_path, binary_slices, output_path):
   if stderr:
     print(stderr)
 
+def _invoke_bitcode_strip(binary_path, output_path):
+  """Wraps bitcode_strip with given arguments for inputs and outputs."""
+  cmd = ["xcrun", "bitcode_strip", binary_path, "-r", "-o", output_path]
+
+  _, stdout, stderr = execute.execute_and_filter_output(cmd,
+                                                        raise_on_failure=True)
+  if stdout:
+    print(stdout)
+  if stderr:
+    print(stderr)
 
 def _find_archs_for_binaries(binary_list):
   """Queries lipo to identify binary archs from each of the binaries."""
@@ -125,7 +135,7 @@ def _copy_framework_file(framework_file, executable, output_path):
   return 0
 
 
-def _strip_framework_binary(framework_binary, output_path, slices_needed):
+def _strip_framework_binary(framework_binary, output_path, slices_needed, strip_bitcode):
   """Strips the binary to only the slices needed, saves output to given path."""
   if not slices_needed:
     print("Internal Error: Did not specify any slices needed for binary at "
@@ -139,6 +149,9 @@ def _strip_framework_binary(framework_binary, output_path, slices_needed):
   temp_framework_path = os.path.join(output_path, path_from_framework)
 
   _invoke_lipo(framework_binary, slices_needed, temp_framework_path)
+
+  if strip_bitcode == "true":
+    _invoke_bitcode_strip(temp_framework_path, temp_framework_path)
 
 
 def main():
@@ -162,6 +175,10 @@ def main():
   parser.add_argument(
       "--output_zip", type=str, required=True, help="path to save the zip file "
       "containing a codesigned, lipoed version of the imported framework"
+  )
+  parser.add_argument(
+      "--strip_bitcode", type=str, action="append", help="Strip bitcode "
+      "from target framework to reduce size"
   )
   args = parser.parse_args()
 
@@ -195,7 +212,8 @@ def main():
         return 1
       status_code = _strip_framework_binary(framework_binary,
                                             args.temp_path,
-                                            slices_needed)
+                                            slices_needed,
+                                            args.strip_bitcode)
     if status_code:
       return 1
 

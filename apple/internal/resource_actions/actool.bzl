@@ -46,6 +46,10 @@ load(
     "@bazel_skylib//lib:paths.bzl",
     "paths",
 )
+load(
+    "@build_bazel_rules_apple//apple/internal/utils:defines.bzl",
+    "defines",
+)
 
 def _actool_args_for_special_file_types(ctx, asset_files):
     """Returns command line arguments needed to compile special assets.
@@ -169,6 +173,9 @@ def compile_asset_catalog(ctx, asset_files, output_dir, output_plist):
     platform = platform_support.platform(ctx)
     min_os = platform_support.minimum_os(ctx)
     actool_platform = platform.name_in_plist.lower()
+    
+    apple_actool_filter_for_device_model = defines.string_value(ctx, "apple.actool_filter_for_device_model", "")
+    apple_actool_filter_for_device_os_version = defines.string_value(ctx, "apple.actool_filter_for_device_os_version", "")
 
     args = [
         "actool",
@@ -180,6 +187,14 @@ def compile_asset_catalog(ctx, asset_files, output_dir, output_plist):
         min_os,
         "--compress-pngs",
     ]
+    
+    if apple_actool_filter_for_device_model:
+        args.append("--filter-for-device-model")
+        args.append(apple_actool_filter_for_device_model)
+        
+    if apple_actool_filter_for_device_os_version:
+        args.append("--filter-for-device-os-version")
+        args.append(apple_actool_filter_for_device_os_version)
 
     if xcode_support.is_xcode_at_least_version(
         ctx.attr._xcode_config[apple_common.XcodeVersionConfig],

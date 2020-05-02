@@ -46,6 +46,10 @@ load(
     "@bazel_skylib//lib:paths.bzl",
     "paths",
 )
+load(
+    "@build_bazel_rules_apple//apple/internal/utils:defines.bzl",
+    "defines",
+)
 
 def _framework_import_partial_impl(ctx, targets, targets_to_avoid):
     """Implementation for the framework import file processing partial."""
@@ -145,6 +149,10 @@ def _framework_import_partial_impl(ctx, targets, targets_to_avoid):
             is_framework = True,
         )
         args.add_all(codesign_args)
+
+        strip_bitcode_dynamic_frameworks_requested = defines.bool_value(ctx, "apple.strip_bitcode_dynamic_frameworks", False)
+        if strip_bitcode_dynamic_frameworks_requested:
+            args.add("--strip_bitcode", "true")
 
         # Inputs of action are all the framework files, plus binaries needed for identifying the
         # current build's preferred architecture, plus a generated list of those binaries to prune
