@@ -176,6 +176,7 @@ def compile_asset_catalog(ctx, asset_files, output_dir, output_plist):
 
     apple_actool_filter_for_device_model = defines.string_value(ctx, "apple.actool_filter_for_device_model", "")
     apple_actool_filter_for_device_os_version = defines.string_value(ctx, "apple.actool_filter_for_device_os_version", "")
+    apple_actool_optimization_space_enable = defines.bool_value(ctx, "apple.actool_optimization_space_enable", False)
 
     args = [
         "actool",
@@ -195,6 +196,13 @@ def compile_asset_catalog(ctx, asset_files, output_dir, output_plist):
     if apple_actool_filter_for_device_os_version:
         args.append("--filter-for-device-os-version")
         args.append(apple_actool_filter_for_device_os_version)
+
+    if apple_actool_optimization_space_enable:
+        args.append("--optimization")
+        args.append("space")
+    else:
+        args.append("--optimization")
+        args.append("time")
 
     if xcode_support.is_xcode_at_least_version(
         ctx.attr._xcode_config[apple_common.XcodeVersionConfig],
