@@ -322,10 +322,20 @@ def _ios_static_framework_impl(ctx):
     # TODO(kaipi): Extract this into a common location to be reused and refactored later when we
     # add linking support directly into the rule.
     binary_target = ctx.attr.deps[0]
+
+    binary_avoid_target = None
+    if hasattr(ctx.attr, "avoid_data_deps"):
+        binary_avoid_target = ctx.attr.deps[1]
+
+    if ctx.attr.exclude_resources:
+        binary_avoid_target = binary_target
+
     binary_artifact = binary_target[apple_common.AppleStaticLibrary].archive
 
+    bundle_id = ctx.attr.bundle_id
+
     processor_partials = [
-        partials.apple_bundle_info_partial(),
+        partials.apple_bundle_info_partial(bundle_id = bundle_id),
         partials.binary_partial(binary_artifact = binary_artifact),
     ]
 
@@ -346,8 +356,13 @@ def _ios_static_framework_impl(ctx):
             ),
         )
 
-    if not ctx.attr.exclude_resources:
-        processor_partials.append(partials.resources_partial())
+    processor_partials.append(partials.resources_partial(
+        bundle_id = bundle_id,
+        plist_attrs = ["infoplists"],
+        version_keys_required = False,
+        targets_to_avoid = [binary_avoid_target],
+        top_level_attrs = ["resources"],
+    ))
 
     processor_result = processor.process(ctx, processor_partials)
 

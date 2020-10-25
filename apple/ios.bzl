@@ -110,6 +110,7 @@ def ios_static_framework(name, **kwargs):
     # buildifier: disable=function-docstring-args
     """Builds and bundles an iOS static framework for third-party distribution."""
     avoid_deps = kwargs.get("avoid_deps")
+    avoid_data_deps = kwargs.get("avoid_data_deps", None)
     deps = kwargs.get("deps")
     apple_static_library_name = "%s.apple_static_library" % name
 
@@ -123,13 +124,25 @@ def ios_static_framework(name, **kwargs):
         visibility = kwargs.get("visibility"),
     )
 
+    avoided_apple_static_libraries = []
+    if avoid_data_deps:
+        native.apple_static_library(
+            name = apple_static_library_name + "_avoided",
+            deps = avoid_data_deps,
+            minimum_os_version = kwargs.get("minimum_os_version"),
+            platform_type = str(apple_common.platform_type.ios),
+            testonly = kwargs.get("testonly"),
+            visibility = kwargs.get("visibility"),
+        )
+        avoided_apple_static_libraries.append(apple_static_library_name + "_avoided")
+
     passthrough_args = kwargs
     passthrough_args.pop("avoid_deps", None)
     passthrough_args.pop("deps", None)
 
     _ios_static_framework(
         name = name,
-        deps = [apple_static_library_name],
+        deps = [apple_static_library_name] + avoided_apple_static_libraries,
         avoid_deps = [apple_static_library_name],
         **passthrough_args
     )
