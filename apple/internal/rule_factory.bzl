@@ -568,12 +568,25 @@ A list of library targets on which this framework depends in order to compile, b
 closure of which will not be linked into the framework's binary.
 """,
             ),
+            "avoid_data_deps": attr.label_list(
+                default = [],
+                doc = """
+A list of library targets on which this framework depends in order to compile, but the transitive resources
+closure of which will not be copied into the framework's bundle.
+""",
+            ),
             "exclude_resources": attr.bool(
                 default = False,
                 doc = """
 Indicates whether resources should be excluded from the bundle. This can be used to avoid
 unnecessarily bundling resources if the static framework is being distributed in a different
 fashion, such as a Cocoapod.
+""",
+            ),
+            "bundle_id": attr.string(
+            doc = """
+The bundle ID (reverse-DNS path followed by app name) of the framework. If present,
+this value will be embedded in an Info.plist in the framework bundle.
 """,
             ),
         })
