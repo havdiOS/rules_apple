@@ -46,6 +46,10 @@ load(
     "@bazel_skylib//lib:paths.bzl",
     "paths",
 )
+load(
+    "@build_bazel_rules_apple//apple/internal/utils:defines.bzl",
+    "defines",
+)
 
 def _actool_args_for_special_file_types(
         *,
@@ -213,6 +217,9 @@ def compile_asset_catalog(
     platform = platform_prerequisites.platform
     actool_platform = platform.name_in_plist.lower()
 
+    apple_actool_filter_for_device_model = defines.string_value(ctx, "apple.actool_filter_for_device_model", "")
+    apple_actool_filter_for_device_os_version = defines.string_value(ctx, "apple.actool_filter_for_device_os_version", "")
+
     args = [
         "actool",
         "--compile",
@@ -223,6 +230,14 @@ def compile_asset_catalog(
         platform_prerequisites.minimum_os,
         "--compress-pngs",
     ]
+    
+    if apple_actool_filter_for_device_model:
+        args.append("--filter-for-device-model")
+        args.append(apple_actool_filter_for_device_model)
+        
+    if apple_actool_filter_for_device_os_version:
+        args.append("--filter-for-device-os-version")
+        args.append(apple_actool_filter_for_device_os_version)
 
     if xcode_support.is_xcode_at_least_version(platform_prerequisites.xcode_version_config, "8"):
         if product_type:

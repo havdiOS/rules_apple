@@ -476,13 +476,15 @@ def ios_simulator(simctl_path, minimum_os, sim_device, sim_os_version):
   Yields:
     The UDID of the simulator.
   """
-  if sim_device and sim_os_version:
-    with temporary_ios_simulator(simctl_path, sim_device,
-                                 sim_os_version) as udid:
-      yield udid
-  else:
-    yield persistent_ios_simulator(simctl_path, minimum_os, sim_device,
+  yield persistent_ios_simulator(simctl_path, minimum_os, sim_device,
                                    sim_os_version)
+  # if sim_device and sim_os_version:
+  #   with temporary_ios_simulator(simctl_path, sim_device,
+  #                                sim_os_version) as udid:
+  #     yield udid
+  # else:
+  #   yield persistent_ios_simulator(simctl_path, minimum_os, sim_device,
+  #                                  sim_os_version)
 
 
 def run_app_in_simulator(simulator_udid, developer_path, simctl_path,
