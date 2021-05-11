@@ -340,7 +340,7 @@ def _apple_static_framework_import_impl(ctx):
     providers.append(_objc_provider_with_dependencies(ctx, objc_provider_fields))
     providers.append(_cc_info_with_dependencies(ctx, header_imports))
 
-    bundle_files = [x for x in framework_imports if ".bundle/" in x.short_path]
+    bundle_files = [x for x in framework_imports if ".bundle/" in x.short_path and ".framework/Resources.bundle/" not in x.short_path]
     if bundle_files:
         parent_dir_param = partial.make(
             resources.bundle_relative_parent_dir,
