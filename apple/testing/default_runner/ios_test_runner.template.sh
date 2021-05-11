@@ -164,8 +164,6 @@ if [ ! -z ${ENABLE_CODE_COVERAGE+x} ] && [[ "${ENABLE_CODE_COVERAGE}" == "true" 
       -output-dir="$OUTPUT_DIR/coverage" \
       -ignore-filename-regex="$IGNORE_FILTER_REGEX" \
       -name-regex="$FILTER_REGEX"
-      
-    open "$OUTPUT_DIR/coverage/index.html"
   fi
   
   if [[ "${COVERAGE_TEXT_REPORT}" == "True" ]]; then
