@@ -42,7 +42,7 @@ done
 runner_flags=("-v")
 
 TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/test_runner_work_dir.XXXXXX")"
-trap '' ERR EXIT
+trap 'rm -rf "${TMP_DIR}"' ERR EXIT
 runner_flags+=("--work_dir=${TMP_DIR}")
 
 TEST_BUNDLE_PATH="%(test_bundle_path)s"
