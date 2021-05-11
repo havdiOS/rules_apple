@@ -1242,10 +1242,6 @@ def _ios_static_framework_impl(ctx):
 def _ios_static_framework_swift_impl(ctx):
     """Experimental implementation of ios_static_framework."""
 
-    # TODO(kaipi): Replace the debug_outputs_provider with the provider returned from the linking
-    # action, when available.
-    # TODO(kaipi): Extract this into a common location to be reused and refactored later when we
-    # add linking support directly into the rule.
     binary_target = ctx.attr.deps[0]
 
     binary_avoid_target = None
@@ -1257,11 +1253,38 @@ def _ios_static_framework_swift_impl(ctx):
 
     binary_artifact = binary_target[apple_common.AppleStaticLibrary].archive
 
-    bundle_id = ctx.attr.bundle_id
+    actions = ctx.actions
+    apple_toolchain_info = ctx.attr._toolchain[AppleSupportToolchainInfo]
+    bundle_name, bundle_extension = bundling_support.bundle_full_name_from_rule_ctx(ctx)
+    executable_name = bundling_support.executable_name(ctx)
+    entitlements = entitlements_support.entitlements(
+        entitlements_attr = getattr(ctx.attr, "entitlements", None),
+        entitlements_file = getattr(ctx.file, "entitlements", None),
+    )
+    label = ctx.label
+    platform_prerequisites = platform_support.platform_prerequisites_from_rule_ctx(ctx)
+    predeclared_outputs = ctx.outputs
+    rule_descriptor = rule_support.rule_descriptor(ctx)
+    
 
     processor_partials = [
-        partials.apple_bundle_info_partial(bundle_id = bundle_id),
-        partials.binary_partial(binary_artifact = binary_artifact),
+        partials.apple_bundle_info_partial(
+            actions = actions,
+            bundle_extension = bundle_extension,
+            bundle_name = bundle_name,
+            executable_name = executable_name,
+            entitlements = entitlements,
+            label_name = label.name,
+            platform_prerequisites = platform_prerequisites,
+            predeclared_outputs = predeclared_outputs,
+            product_type = rule_descriptor.product_type,
+        ),
+        partials.binary_partial(
+            actions = actions,
+            binary_artifact = binary_artifact,
+            executable_name = executable_name,
+            label_name = label.name,
+        ),
     ]
 
     # If there's any Swift dependencies on the static framework rule, treat it as a Swift static
@@ -1269,31 +1292,64 @@ def _ios_static_framework_swift_impl(ctx):
     if SwiftStaticFrameworkInfo in binary_target:
         processor_partials.append(
             partials.swift_static_framework_partial(
+                actions = actions,
+                bundle_name = bundle_name,
+                label_name = label.name,
                 swift_static_framework_info = binary_target[SwiftStaticFrameworkInfo],
             ),
         )
     else:
         processor_partials.append(
             partials.static_framework_header_modulemap_partial(
-                hdrs = ctx.files.hdrs,
-                umbrella_header = ctx.file.umbrella_header,
+                actions = actions,
                 binary_objc_provider = binary_target[apple_common.Objc],
+                bundle_name = bundle_name,
+                hdrs = ctx.files.hdrs,
+                label_name = label.name,
+                umbrella_header = ctx.file.umbrella_header,
             ),
         )
-
+        
     processor_partials.append(partials.resources_partial(
-        bundle_id = bundle_id,
-        plist_attrs = ["infoplists"],
-        version_keys_required = False,
-        targets_to_avoid = [binary_avoid_target],
-        top_level_attrs = ["resources"],
-    ))
+            actions = actions,
+            apple_toolchain_info = apple_toolchain_info,
+            bundle_extension = bundle_extension,
+            bundle_name = bundle_name,
+            environment_plist = ctx.file._environment_plist,
+            executable_name = executable_name,
+            launch_storyboard = None,
+            platform_prerequisites = platform_prerequisites,
+            rule_attrs = ctx.attr,
+            rule_descriptor = rule_descriptor,
+            rule_label = label,
+            plist_attrs = ["infoplists"],
+            version_keys_required = False,
+            targets_to_avoid = [binary_avoid_target],
+            top_level_attrs = ["resources"],
+        ))
 
-    processor_result = processor.process(ctx, processor_partials)
+    processor_result = processor.process(
+        actions = actions,
+        apple_toolchain_info = apple_toolchain_info,
+        bundle_extension = bundle_extension,
+        bundle_name = bundle_name,
+        codesignopts = codesigning_support.codesignopts_from_rule_ctx(ctx),
+        executable_name = executable_name,
+        entitlements = entitlements,
+        ipa_post_processor = ctx.executable.ipa_post_processor,
+        partials = processor_partials,
+        platform_prerequisites = platform_prerequisites,
+        predeclared_outputs = predeclared_outputs,
+        process_and_sign_template = apple_toolchain_info.process_and_sign_template,
+        provisioning_profile = getattr(ctx.file, "provisioning_profile", None),
+        rule_descriptor = rule_descriptor,
+        rule_label = label,
+    )
 
     return [
         DefaultInfo(files = processor_result.output_files),
         IosStaticFrameworkBundleInfo(),
+        OutputGroupInfo(**processor_result.output_groups),
     ] + processor_result.providers
 
 def _ios_imessage_application_impl(ctx):

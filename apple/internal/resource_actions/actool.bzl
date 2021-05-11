@@ -215,11 +215,23 @@ def compile_asset_catalog(
       rule_label: The label of the target being analyzed.
     """
     platform = platform_prerequisites.platform
+    config_vars = platform_prerequisites.config_vars
     actool_platform = platform.name_in_plist.lower()
 
-    apple_actool_filter_for_device_model = defines.string_value(ctx, "apple.actool_filter_for_device_model", "")
-    apple_actool_filter_for_device_os_version = defines.string_value(ctx, "apple.actool_filter_for_device_os_version", "")
-    apple_actool_optimization_space_enable = defines.bool_value(ctx, "apple.actool_optimization_space_enable", False)
+    apple_actool_filter_for_device_model = defines.string_value(
+        config_vars = config_vars,
+        define_name = "apple.actool_filter_for_device_model", 
+        default = "")
+        
+    apple_actool_filter_for_device_os_version = defines.string_value(
+        config_vars = config_vars,
+        define_name = "apple.actool_filter_for_device_os_version", 
+        default = "")
+        
+    apple_actool_optimization_space_enable = defines.bool_value(
+        config_vars = config_vars,
+        define_name = "apple.actool_optimization_space_enable", 
+        default = False)
 
     args = [
         "actool",
