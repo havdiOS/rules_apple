@@ -174,6 +174,21 @@ if [ ! -z ${ENABLE_CODE_COVERAGE+x} ] && [[ "${ENABLE_CODE_COVERAGE}" == "true" 
       -ignore-filename-regex="$IGNORE_FILTER_REGEX" \
       -name-regex="$FILTER_REGEX" > "${OUTPUT_DIR}/coverage_report.txt" 
   fi
+  
+  if [[ "${COVERAGE_HTML_REPORT_ALL_MODULES}" == "True" ]]; then
+    MODULES=( $(echo $ALL_MODULES | tr ";" " ") )
+    for i in "${MODULES[@]}"
+    do
+      xcrun llvm-cov \
+        show \
+        -format=html \
+        -instr-profile "${LLVM_PROFILE_FILE}.profdata" \
+        "${TEST_BUNDLE_TMP_DIR}/${TEST_BUNDLE_NAME}.xctest/${TEST_BUNDLE_NAME}" \
+        -output-dir="$OUTPUT_DIR/$i/coverage" \
+        -ignore-filename-regex="$IGNORE_FILTER_REGEX" \
+        -name-regex=".*/$i/.*Interactor.*.swift"
+    done
+  fi
 fi
 
 exit ${status}
