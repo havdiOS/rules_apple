@@ -186,7 +186,7 @@ if [ ! -z ${ENABLE_CODE_COVERAGE+x} ] && [[ "${ENABLE_CODE_COVERAGE}" == "true" 
         "${TEST_BUNDLE_TMP_DIR}/${TEST_BUNDLE_NAME}.xctest/${TEST_BUNDLE_NAME}" \
         -output-dir="$OUTPUT_DIR/$i/coverage" \
         -ignore-filename-regex="$IGNORE_FILTER_REGEX" \
-        -name-regex=".*/$i/.*Interactor.*.swift"
+        -name-regex=".*/$i/.*Interactor.*\.swift"
     done
   fi
 fi
