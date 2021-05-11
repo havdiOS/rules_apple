@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -e
+set -xe
 
 basename_without_extension() {
   local full_path="$1"
@@ -42,7 +42,7 @@ done
 runner_flags=("-v")
 
 TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/test_runner_work_dir.XXXXXX")"
-trap 'rm -rf "${TMP_DIR}"' ERR EXIT
+trap '' ERR EXIT
 runner_flags+=("--work_dir=${TMP_DIR}")
 
 TEST_BUNDLE_PATH="%(test_bundle_path)s"
@@ -65,6 +65,8 @@ fi
 TEST_HOST_PATH="%(test_host_path)s"
 
 if [[ -n "$TEST_HOST_PATH" ]]; then
+  TEST_HOST_NAME=$(basename_without_extension "${TEST_HOST_PATH}")
+  TEST_BUNDLE_TMP_DIR="${TMP_DIR}/TEST_ROOT/${TEST_HOST_NAME}.app/PlugIns"
   if [[ "$TEST_HOST_PATH" == *.app ]]; then
     # Need to copy the bundle outside of the Bazel execroot since the test
     # runner needs to make some modifications to its contents.
@@ -73,7 +75,6 @@ if [[ -n "$TEST_HOST_PATH" ]]; then
     chmod -R 777 "${TMP_DIR}/$(basename "$TEST_HOST_PATH")"
     runner_flags+=("--app_under_test_path=${TMP_DIR}/$(basename "$TEST_HOST_PATH")")
   else
-    TEST_HOST_NAME=$(basename_without_extension "${TEST_HOST_PATH}")
     TEST_HOST_TMP_DIR="${TMP_DIR}/${TEST_HOST_NAME}"
     unzip -qq -d "${TEST_HOST_TMP_DIR}" "${TEST_HOST_PATH}"
     runner_flags+=("--app_under_test_path=${TEST_HOST_TMP_DIR}/Payload/${TEST_HOST_NAME}.app")
