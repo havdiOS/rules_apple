@@ -118,6 +118,28 @@ if [[ -n "$TESTBRIDGE_TEST_ONLY" ]]; then
   LAUNCH_OPTIONS_JSON_STR+="\"tests_to_run\":[\"$TESTS\"]"
 fi
 
+if [[ "${TEST_HOST_ENVS:-}" != "" ]]; then
+  TEST_HOST_ENVS=$(echo ${TEST_HOST_ENVS} | tr ";" ",")
+  TEST_HOST_ENVS=${TEST_HOST_ENVS//:/\":\"}
+  TEST_HOST_ENVS=${TEST_HOST_ENVS//,/\",\"}
+  TEST_HOST_ENVS="{\"${TEST_HOST_ENVS}\"}"
+  if [[ -n "${LAUNCH_OPTIONS_JSON_STR}" ]]; then
+    LAUNCH_OPTIONS_JSON_STR+=","
+  fi
+  LAUNCH_OPTIONS_JSON_STR+="\"app_under_test_env_vars\":${TEST_HOST_ENVS}"
+fi
+
+if [[ -n "${LAUNCH_OPTIONS_JSON_STR}" ]]; then
+  LAUNCH_OPTIONS_JSON_STR+=","
+fi
+LAUNCH_OPTIONS_JSON_STR+="\"uitest_auto_screenshots\":true"
+
+if [[ -n "${LAUNCH_OPTIONS_JSON_STR}" ]]; then
+  LAUNCH_OPTIONS_JSON_STR+=","
+fi
+LAUNCH_OPTIONS_JSON_STR+="\"keep_xcresult_data\":true"
+
+echo $LAUNCH_OPTIONS_JSON_STR
 if [[ -n "${LAUNCH_OPTIONS_JSON_STR}" ]]; then
   LAUNCH_OPTIONS_JSON_STR="{${LAUNCH_OPTIONS_JSON_STR}}"
   LAUNCH_OPTIONS_JSON_PATH="${TMP_DIR}/launch_options.json"
@@ -125,31 +147,41 @@ if [[ -n "${LAUNCH_OPTIONS_JSON_STR}" ]]; then
   runner_flags+=("--launch_options_json_path=${LAUNCH_OPTIONS_JSON_PATH}")
 fi
 
-target_flags=()
-if [[ -n "$simulator_id" ]]; then
-  target_flags=(
-    "test"
-    "--platform=ios_simulator"
-    "--id=$simulator_id"
-  )
+cmd=
+if [[ "${REAL_DEVICE_TEST:-false}" == "true" ]]; then
+  cmd=("%(testrunner_binary)s"
+    "${runner_flags[@]}"
+    test
+    "--id=${DEVICE_ID:-0}"
+    "--platform=${DEVICE_PLATFORM:-ios_device}"
+    "$@")
 else
-  target_flags=(
-    "simulator_test"
-    "--device_type=%(device_type)s"
-    "--os_version=%(os_version)s"
-  )
-fi
-
-cmd=("%(testrunner_binary)s"
+  target_flags=()
+  if [[ -n "$simulator_id" ]]; then
+    target_flags=(
+      "test"
+      "--platform=ios_simulator"
+      "--id=$simulator_id"
+    )
+  else
+    target_flags=(
+      "simulator_test"
+      "--device_type=%(device_type)s"
+      "--os_version=%(os_version)s"
+    )
+  fi
+  cmd=("%(testrunner_binary)s"
   "${runner_flags[@]}"
   "${target_flags[@]}"
   "${custom_xctestrunner_args[@]}")
+fi
+
 "${cmd[@]}" 2>&1
 status=$?
 
 set -x
 
-if [ ! -z ${ENABLE_CODE_COVERAGE+x} ] && [[ "${ENABLE_CODE_COVERAGE}" == "true" ]]; then
+if [[ "${ENABLE_CODE_COVERAGE:-false}" == "true" ]]; then
   OUTPUT_DIR=$(dirname $LLVM_PROFILE_FILE)/$TEST_BUNDLE_NAME
   rm -rf $OUTPUT_DIR || true
   mkdir -p $OUTPUT_DIR
